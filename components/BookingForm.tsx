@@ -26,6 +26,8 @@ const BookingForm = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [isBookingComplete, setIsBookingComplete] = useState(false)
+  const [orderNumber, setOrderNumber] = useState('')
+  const [orderDate, setOrderDate] = useState('')
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -34,12 +36,15 @@ const BookingForm = () => {
     }
     fetchHolidays()
 
-    // Simulate pre-filled email from URL
+    // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search)
     const emailParam = urlParams.get('email')
-    if (emailParam) {
-      setEmail(emailParam)
-    }
+    const orderNumberParam = urlParams.get('orderNumber')
+    const orderDateParam = urlParams.get('orderDate')
+
+    if (emailParam) setEmail(emailParam)
+    if (orderNumberParam) setOrderNumber(orderNumberParam)
+    if (orderDateParam) setOrderDate(orderDateParam)
   }, [])
 
   const isHoliday = (date: Date) => {
@@ -72,7 +77,7 @@ const BookingForm = () => {
       await new Promise(resolve => setTimeout(resolve, 2000))
       
       // Simulate email notification
-      console.log(`Notification email sent to staff for booking: ${name}, ${email}, ${selectedDate}`)
+      console.log(`Notification email sent to staff for booking: ${name}, ${email}, ${selectedDate}, Order: ${orderNumber}, Date: ${orderDate}`)
 
       alert('予約が確定されました！確認メールが送信されます。')
       setIsBookingComplete(true)
@@ -95,6 +100,26 @@ const BookingForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+      <div>
+        <label htmlFor="orderNumber" className="block text-sm font-medium text-gray-700">注文番号</label>
+        <input
+          type="text"
+          id="orderNumber"
+          value={orderNumber}
+          readOnly
+          className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+        />
+      </div>
+      <div>
+        <label htmlFor="orderDate" className="block text-sm font-medium text-gray-700">注文日</label>
+        <input
+          type="text"
+          id="orderDate"
+          value={orderDate}
+          readOnly
+          className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+        />
+      </div>
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">お名前 <span className="text-red-500">*</span></label>
         <input

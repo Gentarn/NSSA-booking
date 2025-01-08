@@ -58,7 +58,9 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
-    "react-datepicker": "latest"
+    "react-datepicker": "latest",
+    "react-big-calendar": "latest",
+    "moment": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
