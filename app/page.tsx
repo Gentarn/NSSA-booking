@@ -1,4 +1,7 @@
+'use client'
+
 import BookingForm from '../components/BookingForm'
+import "react-datepicker/dist/react-datepicker.css"
 
 export default function Home() {
   return (
@@ -14,4 +17,3 @@ export default function Home() {
     </main>
   )
 }
-

@@ -1,3 +1,4 @@
+import 'react-datepicker/dist/react-datepicker.css'
 import './globals.css'
 import { Inter, Noto_Sans_JP } from 'next/font/google'
 
@@ -20,4 +21,3 @@ export default function RootLayout({
     </html>
   )
 }
-

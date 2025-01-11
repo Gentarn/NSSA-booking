@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import DatePicker from 'react-datepicker'
-import "react-datepicker/dist/react-datepicker.css"
 import { addDays, isWeekend, setHours, setMinutes } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { TimeSlot } from '../lib/types'
+import "react-datepicker/dist/react-datepicker.css"
 
 // Simulated function to get Japanese holidays
 const getJapaneseHolidays = async () => {
@@ -28,6 +29,7 @@ const BookingForm = () => {
   const [isBookingComplete, setIsBookingComplete] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [orderDate, setOrderDate] = useState('')
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([])
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -46,6 +48,26 @@ const BookingForm = () => {
     if (orderNumberParam) setOrderNumber(orderNumberParam)
     if (orderDateParam) setOrderDate(orderDateParam)
   }, [])
+
+  // 選択された日付が変更されたときに利用可能な時間枠を取得
+  useEffect(() => {
+    const fetchAvailableTimeSlots = async () => {
+      if (!selectedDate) return
+
+      try {
+        const response = await fetch(`/api/booking?date=${selectedDate.toISOString()}`)
+        if (!response.ok) throw new Error('Failed to fetch available time slots')
+        
+        const data = await response.json()
+        setAvailableTimeSlots(data.availableTimeSlots)
+      } catch (err) {
+        console.error('Error fetching available time slots:', err)
+        setError('利用可能な時間枠の取得に失敗しました')
+      }
+    }
+
+    fetchAvailableTimeSlots()
+  }, [selectedDate])
 
   const isHoliday = (date: Date) => {
     return holidays.some(holiday => 
@@ -72,17 +94,37 @@ const BookingForm = () => {
     setIsLoading(true)
     setError('')
 
+    if (!selectedDate) {
+      setError('受け取り日時を選択してください')
+      setIsLoading(false)
+      return
+    }
+
     try {
-      // Simulate API call to Zoho CRM
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Simulate email notification
-      console.log(`Notification email sent to staff for booking: ${name}, ${email}, ${selectedDate}, Order: ${orderNumber}, Date: ${orderDate}`)
+      const response = await fetch('/api/booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          date: selectedDate.toISOString(),
+          orderDate,
+          orderNumber,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '予約処理中にエラーが発生しました')
+      }
 
       alert('予約が確定されました！確認メールが送信されます。')
       setIsBookingComplete(true)
     } catch (err) {
-      setError('予約処理中にエラーが発生しました。もう一度お試しください。')
+      setError(err instanceof Error ? err.message : '予約処理中にエラーが発生しました。もう一度お試しください。')
     } finally {
       setIsLoading(false)
     }
@@ -98,6 +140,8 @@ const BookingForm = () => {
     )
   }
 
+  const inputClassName = "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-6">
       <div>
@@ -107,7 +151,7 @@ const BookingForm = () => {
           id="orderNumber"
           value={orderNumber}
           readOnly
-          className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+          className={`${inputClassName} bg-gray-100`}
         />
       </div>
       <div>
@@ -117,7 +161,7 @@ const BookingForm = () => {
           id="orderDate"
           value={orderDate}
           readOnly
-          className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+          className={`${inputClassName} bg-gray-100`}
         />
       </div>
       <div>
@@ -128,7 +172,7 @@ const BookingForm = () => {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+          className={inputClassName}
         />
       </div>
       <div>
@@ -139,7 +183,7 @@ const BookingForm = () => {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+          className={inputClassName}
         />
       </div>
       <div>
@@ -150,27 +194,37 @@ const BookingForm = () => {
           required
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12"
+          className={inputClassName}
         />
       </div>
-      <div>
+      <div className="relative">
         <label htmlFor="date" className="block text-sm font-medium text-gray-700">受け取り日時 <span className="text-red-500">*</span></label>
-        <DatePicker
-          selected={selectedDate}
-          onChange={(date: Date) => setSelectedDate(date)}
-          showTimeSelect
-          timeFormat="HH:mm"
-          timeIntervals={60}
-          timeCaption="時間"
-          dateFormat="yyyy年MM月dd日 HH:mm"
-          minDate={addDays(new Date(), 5)}
-          maxDate={addDays(new Date(), 30)}
-          filterDate={filterAvailableDates}
-          minTime={setHours(setMinutes(new Date(), 0), 9)}
-          maxTime={setHours(setMinutes(new Date(), 0), 17)}
-          locale={ja}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-12 md:w-[150%]"
-        />
+        <div className="mt-1">
+          <DatePicker
+            selected={selectedDate}
+            onChange={(date: Date | null) => setSelectedDate(date)}
+            showTimeSelect
+            timeFormat="HH:mm"
+            timeIntervals={60}
+            timeCaption="時間"
+            dateFormat="yyyy年MM月dd日 HH:mm"
+            minDate={addDays(new Date(), 5)}
+            maxDate={addDays(new Date(), 30)}
+            filterDate={filterAvailableDates}
+            minTime={setHours(setMinutes(new Date(), 0), 9)}
+            maxTime={setHours(setMinutes(new Date(), 0), 17)}
+            locale={ja}
+            className={inputClassName}
+            excludeTimes={
+              availableTimeSlots.length > 0
+                ? Array.from({ length: 9 }, (_, i) => i + 9)
+                  .filter(hour => !availableTimeSlots.some(slot => slot.hour === hour))
+                  .map(hour => setHours(setMinutes(new Date(), 0), hour))
+                : []
+            }
+            placeholderText="日時を選択してください"
+          />
+        </div>
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <div className="flex justify-center">
@@ -187,4 +241,3 @@ const BookingForm = () => {
 }
 
 export default BookingForm
-

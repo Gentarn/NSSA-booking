@@ -6,6 +6,10 @@ export interface Booking {
   date: string
   order_date: string
   order_number: string
-  created_at: string
-  updated_at: string
+  status: 'confirmed' | 'cancelled' | 'pending'
+}
+
+export interface TimeSlot {
+  hour: number
+  time: string
 }
